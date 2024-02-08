@@ -482,6 +482,17 @@ fn test_proc_loginuid() {
 }
 
 #[test]
+fn test_proc_sessionuid() {
+    if !Path::new("/proc/self/sessionuid").exists() {
+        return;
+    }
+
+    let myself = Process::myself().unwrap();
+    let loginuid = myself.sessionid().unwrap();
+    println!("{:?}", loginuid);
+}
+
+#[test]
 fn test_nopanic() {
     fn inner() -> ProcResult<u8> {
         let a = vec!["xyz"];

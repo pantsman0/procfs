@@ -288,6 +288,24 @@ impl Process {
         Ok(self.metadata()?.st_uid)
     }
 
+    // Returns the session ID the process is running in. The session ID is positive for regular processes, and `-1` for daemons.
+    pub fn sessionid(&self) -> ProcResult<i32> {
+        // The session ID is printed as an ascii-encoded base 10 u32 when read.
+        let session_id = u32::from_str(
+            wrap_io_error!(
+                self.root.join("cwd"),
+                rustix::fs::readlinkat(&self.fd, "cwd", Vec::new())
+            )?
+            .into_string().expect("/proc/<pid>/sessionid contains invalid data")
+            .as_str()
+        )?;
+
+        // SAFETY: any valid u32 bit pattern is also a valid i32 bit pattern
+        Ok(
+            unsafe {std::mem::transmute(session_id)}
+        )
+    }
+
     fn metadata(&self) -> ProcResult<rustix::fs::Stat> {
         Ok(rustix::fs::fstat(&self.fd).map_err(io::Error::from)?)
     }
